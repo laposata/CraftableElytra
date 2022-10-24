@@ -15,8 +15,11 @@
 
   "environment": "*",
   "entrypoints": {
-    "main": [
+    "server": [
       "com.dreamtea.${main_class}"
+    ],
+    "fabric-datagen": [
+      "com.dreamtea.datagen.DatagenEntry"
     ]
   },
   "mixins": [

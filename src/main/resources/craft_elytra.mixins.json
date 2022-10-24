@@ -6,7 +6,8 @@
   "mixins": [
     "AnvilScreenHandlerMixin",
     "ElytraItemMixin",
-    "SmithingScreenHandlerMixin"
+    "ItemStackMixin",
+    "RecipeManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

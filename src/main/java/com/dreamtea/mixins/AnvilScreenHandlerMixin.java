@@ -1,8 +1,9 @@
 package com.dreamtea.mixins;
 
+import com.dreamtea.item.AlternateItemStack;
+import com.dreamtea.recipes.ElytraRecipe;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ElytraItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.screen.ForgingScreenHandler;
@@ -20,13 +21,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import static com.dreamtea.imixin.IFragile.hasCustomName;
-import static com.dreamtea.imixin.IFragile.isFragile;
-import static com.dreamtea.imixin.IFragile.repairCost;
-import static com.dreamtea.imixin.IFragile.repairItem;
-import static com.dreamtea.imixin.IFragile.repairQty;
-import static com.dreamtea.imixin.IFragile.restore;
-
 @Mixin(AnvilScreenHandler.class)
 public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
   @Shadow @Final private Property levelCost;
@@ -38,27 +32,25 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
     super(type, syncId, playerInventory, context);
   }
 
-  @Inject(method = "updateResult", at = @At("HEAD"), cancellable = true)
+  @Inject(method = "updateResult", at = @At("RETURN"), cancellable = true)
   public void pressElytra(CallbackInfo ci){
-    if(isFragile(this.input.getStack(0)) && this.input.getStack(1).isOf(repairItem)){
-      ItemStack ingredient = this.input.getStack(1);
-      if(ingredient.getCount() >= repairQty){
-        ItemStack result = restore(input.getStack(0).copy());
-        this.output.setStack(0, result);
-        this.repairingFragileElytra = true;
-        this.levelCost.set(repairCost);
-        this.repairItemUsage = repairQty;
-        if (StringUtils.isBlank(this.newItemName)) {
-          if (hasCustomName(this.input.getStack(0))) {
-            result.removeCustomName();
-          }
-        } else if (!this.newItemName.equals(this.input.getStack(0).getName().getString())) {
-          result.setCustomName(Text.literal(this.newItemName));
-        }
-        ci.cancel();
-        return;
+    if(ElytraRecipe.canCraft(this.input.getStack(0), this.input.getStack(1))) {
+      ItemStack result = ElytraRecipe.BROKEN_ELYTRA.copy();
+      this.output.setStack(0, result);
+      this.repairingFragileElytra = true;
+      this.levelCost.set(ElytraRecipe.levels);
+      this.repairItemUsage = ElytraRecipe.secondary_count;
+      String customName = AlternateItemStack.getCustomName(this.input.getStack(0));
+      if(customName != null){
+        this.newItemName = customName;
       }
-    } else if(isFragile(this.input.getStack(0))) {
+      if (StringUtils.isBlank(this.newItemName)) {
+        if (customName != null) {
+          result.removeCustomName();
+        }
+      } else if(!this.newItemName.equals(result.getName().toString())){
+        result.setCustomName(Text.literal(this.newItemName));
+      }
       ci.cancel();
     }
     repairingFragileElytra = false;
@@ -70,5 +62,8 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
       cir.setReturnValue(true);
     }
   }
-
+  @Inject(method = "onTakeOutput", at = @At("TAIL"), cancellable = true)
+  public void onTakePressedElytra(PlayerEntity player, ItemStack stack, CallbackInfo ci){
+    repairingFragileElytra = false;
+  }
 }
