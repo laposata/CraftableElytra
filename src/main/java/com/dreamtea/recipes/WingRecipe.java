@@ -22,7 +22,7 @@ import static com.dreamtea.CraftableElytra.NAMESPACE;
 
 public class WingRecipe extends SmokingRecipe {
   private static final int cookingMinutes = 60;
-  public static final int cookingTime = 40;
+  public static final int cookingTime = cookingMinutes * 60 * 20;
   public static final String ALT_ID = "wing";
   private static final int xp = 160;
   public static final Item standinItem = Items.LEATHER;
